@@ -1,7 +1,7 @@
 #include <Servo.h> // include the Servo library
 #include <Stepper.h> // include the Stepper library
 
-// -----NEED TO CHANGE VALUES-----
+// -----NEED TO CHANGE VALUES-----test
 #define STEPS 100 // steps per revolution of stepper motor
 const int gripperPin = 1; // gripper servo pin
 const int telescopePin = 2; // telescoping servo pin
