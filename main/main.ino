@@ -34,7 +34,9 @@ int gripperState = 0; // 0 for closed, 1 for open
 
 String valInput; //for testing
 int i=0;
-int j=0; //loop indexing variable
+//coordinated stored here
+int pick[2] = {0, 0}; 
+int place[2] = {0, 0};
 
 void setup() {
   base.setSpeed(baseSpeed);
@@ -164,26 +166,44 @@ void loop() {
       }
   }//test ends
 
-
-  //Standy I (waiting for coordinates of pickup)
-
-  //Check Movement (recived coords, using valid move function to check if the move will work)
-
-  //Grab
-    //Rotate base
-    //lower and extend arm (Simultaneously?)
-    //Grip test tube
-    //Return to middle position
-
-  //Sandby II (waiting for coordinates of dropoff)
-
-  //Check Movement (recived coords, using valid move function to check if the move will work)
+/* Main code here
+ *  
+ *  
+ *  standy (waiting for coordinates of pickup)
+ *  
+ *  recive coordinated from pi.
+ *  pick[1] = ...
+ *  pick[2] = ...
+ *  place[1]= ...
+ *  place[2]= ...
+ *   
+ *  Check if they are valid moves (Optional)
+ * 
+ * Pick
+ *  rotate base:        moveBaseAngle(pick[1])
+ *  extend arm:         moveTelescope(pick[2])
+ *  lower arm:          moveArmAngle(0)
+ *  grip test tube:     moveGripper(1)
+ *  
+ *  return to middle:   moveArmAngle(90)
+ *                      moveTelescope(0)
+ *                      moveBaseAngle(0)
+ *  
+ * Place
+ *  rotate base:        moveBaseAngle(place[1])
+ *  extend arm:         moveTelescope(place[2])
+ *  lower arm:          moveArmAngle(0)
+ *  release test tube:  moveGripper(0)
+ *  
+ *  return to middle:   moveArmAngle(90)
+ *                      moveTelescope(0)
+ *                      moveBaseAngle(0)
+ *  
+ *  
+ *  
+ *  Loop back to top
+ *  
+ *  
   
-  //Place
-    //Rotate base
-    //lower and extend arm (Simultaneously?)
-    //Release test tube
-    //Return to middle position  
-
-  //Loop back to top
+  */
 }
