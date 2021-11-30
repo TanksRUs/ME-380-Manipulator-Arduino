@@ -11,9 +11,9 @@ Stepper base(STEPS, 7, 8, 9, 10); // assume stepper is connected to pins 7-10
 
 const float minMaxArmLength[] = {50, 100}; // [mm] fully retracted/extended arm lengths
 const float degPermm = 2; // how much the servo needs to turn to extend telescope by 1 mm
-const float armAngleRatio = 5; // ratio of servo rotation:arm angle
+const float armAngleRatio = 4.44; // ratio of servo rotation:arm angle
 const float baseAngleRatio = 10; // ratio of stepper rotation:base angle
-const int gripperRatio = 100; // how much servo needs to rotate to open/close gripper
+const int gripperRatio = 150; // how much servo needs to rotate to open/close gripper
 
 // initialize variables to store motor positions
 int gripperPos = 300;   //ranges from 150 to 520
@@ -35,8 +35,8 @@ int gripperState = 0; // 0 for closed, 1 for open
 String valInput; //for testing
 int i=0;
 //coordinated stored here
-int pick[2] = {0, 0}; 
-int place[2] = {0, 0};
+int pick[2] = {1, 1}; 
+int place[2] = {1, 1};
 
 void setup() {
   base.setSpeed(baseSpeed);
@@ -55,12 +55,27 @@ void setup() {
     Serial.print(val[i]);
     Serial.print(" ");
   }
-  Serial.print("]");
+  Serial.println("]");
       
   //send values to servo
   for (i=0; i<3; i++) {
     pwm.setPWM(i+1, 0, val[i]);
-    }
+  }
+
+  moveGripper(1);
+  moveGripper(0);
+  moveArmAngle(90);
+  
+  Serial.print("pick = [ ");
+  Serial.print(pick[1]);
+  Serial.print(" ");
+  Serial.print(pick[2]);
+  Serial.println(" ]");
+  Serial.print("place = [ ");
+  Serial.print(place[1]);
+  Serial.print(" ");
+  Serial.print(place[2]);
+  Serial.println(" ]");
 }
 
  
@@ -74,23 +89,47 @@ void moveBaseAngle(float angle) { // [deg] rotate base
 }
 
 void moveArmAngle(float angle) { // [deg] rotate arm
-  phi = phi + angle; // update coords
-  //removed for the test, currently recieved angle is the change in PWM signal
-  //angle = angle * armAngleRatio; // convert to servo angles
-
-  armAnglePos = armAnglePos + angle;
-
-  //Move servo
-  for (i=0; i<abs(angle)+10; i++){
-    if (val[0] < armAnglePos){
-      val[0] = val[0]+1;
-    }
-    else if (val[0] > armAnglePos) {
-      val[0] = val[0]-1;
-    }
-    pwm.setPWM(1, 0, val[0]);
-    delay(100);
+  armAnglePos = 200 + angle * armAngleRatio; //converts angle to a pwm signal (0 deg = 200, 90 deg = 600)
+  
+  if (angle < phi){
+    //Move servo
+    for (i=0; i<abs(angle-phi)+10; i++){
+      if (val[0] < armAnglePos-20){
+        val[0] = val[0]+1;
+      }
+      else if (val[0] > armAnglePos-20) {
+        val[0] = val[0]-1;
+      }
+      pwm.setPWM(1, 0, val[0]);
+      delay(25);
   }
+    for (i=0; i<20; i++){
+      val[0] = val[0]+1;
+      pwm.setPWM(1, 0, val[0]);
+      delay(25);
+    } 
+  }
+  
+  else if (phi < angle){
+    //Move servo
+    for (i=0; i<abs(angle-phi)+10; i++){
+      if (val[0] < armAnglePos+20){
+        val[0] = val[0]+1;
+      }
+      else if (val[0] > armAnglePos+20) {
+        val[0] = val[0]-1;
+      }
+      pwm.setPWM(1, 0, val[0]);
+      delay(25);
+    }
+    for (i=0; i<20; i++){
+      val[0] = val[0]-1;
+      pwm.setPWM(1, 0, val[0]);
+      delay(25);
+    }    
+  }
+  
+  phi = angle;
 }
 
 void moveTelescope(float dist) { // [mm] extend/retract arm
@@ -113,34 +152,62 @@ void moveTelescope(float dist) { // [mm] extend/retract arm
   }
 }
 
-void moveGripper(int state) { // 0 to close, 1 to open
-  if (state == 0 && state != gripperState) { // closing gripper
+void moveGripper(int state) { // 1 to close, 0 to open
+  if (state == 0 && state != gripperState) { // open gripper
     gripperState = state; //Update gripper state
     gripperPos = gripperPos - gripperRatio; // assuming subtract for closing (flip above if needed)
-  } else if (state == 1 && state != gripperState) { // opening gripper
+    
+    //Move Servo
+    for (i=0; i<abs(gripperRatio)+10; i++){
+      if (val[2] < gripperPos - 20){
+        val[2] = val[2]+1;
+      }
+      else if (val[2] > gripperPos - 20) {
+        val[2] = val[2]-1;
+      }
+      pwm.setPWM(3, 0, val[2]);
+      delay(25);
+    }
+    for (i=0; i<20; i++){
+      val[2] = val[2]+1;
+      pwm.setPWM(3, 0, val[2]);
+      delay(25);
+    }
+  } 
+  
+  else if (state == 1 && state != gripperState) { // close gripper
     gripperState = state; //Update gripper state
     gripperPos = gripperPos + gripperRatio;
-  }
-  //Move Servo
-  for (i=0; i<abs(gripperRatio)+10; i++){
-    if (val[2] < gripperPos){
-      val[2] = val[2]+1;
+        
+    //Move Servo
+    for (i=0; i<abs(gripperRatio)+10; i++){
+      if (val[2] < gripperPos + 20){
+        val[2] = val[2]+1;
+      }
+      else if (val[2] > gripperPos + 20) {
+        val[2] = val[2]-1;
+      }
+      pwm.setPWM(3, 0, val[2]);
+      delay(25);
     }
-    else if (val[2] > gripperPos) {
+    for (i=0; i<20; i++){
       val[2] = val[2]-1;
+      pwm.setPWM(3, 0, val[2]);
+      delay(25);
     }
-    pwm.setPWM(3, 0, val[2]);
-    delay(100);
-  }
+  }  
+  
 }
 
+/*
 bool validMove(float newTheta, float newPhi, float newArmLength) { // TODO: validate if moving to new coords is possible
   return true;
 }
+*/
 
 void loop() {
-  // TODO: put your main code here, to run repeatedly:
-  
+
+  /*
   //Test
   if (Serial.available() > 0) {
     valInput = Serial.readString();
@@ -165,45 +232,72 @@ void loop() {
       pwm.setPWM(i+1, 0, val[i]);
       }
   }//test ends
-
-/* Main code here
- *  
- *  
- *  standy (waiting for coordinates of pickup)
- *  
- *  recive coordinated from pi.
- *  pick[1] = ...
- *  pick[2] = ...
- *  place[1]= ...
- *  place[2]= ...
- *   
- *  Check if they are valid moves (Optional)
- * 
- * Pick
- *  rotate base:        moveBaseAngle(pick[1])
- *  extend arm:         moveTelescope(pick[2])
- *  lower arm:          moveArmAngle(0)
- *  grip test tube:     moveGripper(1)
- *  
- *  return to middle:   moveArmAngle(90)
- *                      moveTelescope(0)
- *                      moveBaseAngle(0)
- *  
- * Place
- *  rotate base:        moveBaseAngle(place[1])
- *  extend arm:         moveTelescope(place[2])
- *  lower arm:          moveArmAngle(0)
- *  release test tube:  moveGripper(0)
- *  
- *  return to middle:   moveArmAngle(90)
- *                      moveTelescope(0)
- *                      moveBaseAngle(0)
- *  
- *  
- *  
- *  Loop back to top
- *  
- *  
-  
   */
+
+
+  //Main code starts here
+  
+  //standy (waiting for coordinates of pickup)
+
+  //Manual Input
+  while (Serial.available() == 0){
+    
+  }
+  for (i=0; i<2; i++){
+    while (Serial.available() == 0){
+      
+    }
+    valInput = Serial.readString();
+    pick[i+1] = valInput.toInt();
+    Serial.print("I recived: ");
+    Serial.println(pick[i+1]);
+  }
+  for (i=0; i<2; i++){
+    while (Serial.available() == 0){
+      
+    }
+    valInput = Serial.readString();
+    place[i+1] = valInput.toInt();
+    Serial.print("I recived: ");
+    Serial.println(place[i+1]);
+  }    
+  Serial.print("pick = [ ");
+  Serial.print(pick[1]);
+  Serial.print(" ");
+  Serial.print(pick[2]);
+  Serial.println(" ]");
+  Serial.print("place = [ ");
+  Serial.print(place[1]);
+  Serial.print(" ");
+  Serial.print(place[2]);
+  Serial.println(" ]");
+
+  //recive coordinated from the pi
+    
+  //Check if they are valid moves (Optional)
+  
+  //Pick
+  moveBaseAngle(pick[1]);
+  moveTelescope(pick[2]);
+  moveArmAngle(0);
+  moveGripper(1);
+
+  //Return to middle
+  moveArmAngle(90);
+  moveTelescope(0);
+  moveBaseAngle(0);
+
+  //Place
+  moveBaseAngle(place[1]);
+  moveTelescope(place[2]);
+  moveArmAngle(0);
+  moveGripper(0);
+
+  //return to middle
+  moveArmAngle(90);
+  moveTelescope(0);
+  moveBaseAngle(0);
+
+  //Loop back to top */
+  
 }
